@@ -39,4 +39,4 @@ jobs:
           author-email: ${{ steps.import_gpg.outputs.email }}
           author-name: 'Zantekk Dev Bot'
           repos-file: 'repositories.md'
-          sign-commits: true
+#          sign-commits: true
