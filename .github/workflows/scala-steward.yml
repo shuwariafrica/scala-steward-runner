@@ -34,7 +34,7 @@ jobs:
           git_commit_gpgsign: true
 
       - name: Execute Scala Steward
-        uses: scala-steward-org/scala-steward-action@a57c95bff174c8b29c2f9227505454025fe63889
+        uses: scala-steward-org/scala-steward-action@v2
         with:
           github-token: ${{ secrets.STEWARD_TOKEN }}
           author-email: ${{ steps.import_gpg.outputs.email }}
