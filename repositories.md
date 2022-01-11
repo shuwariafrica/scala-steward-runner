@@ -1,2 +1,2 @@
 - unganisha/mchunguzi
-- unganisha/demo-repository
+- unganisha/config4circe
