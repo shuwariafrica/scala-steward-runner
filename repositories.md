@@ -1,2 +1,2 @@
 - unganisha/mchunguzi
-- unganisha/config4circe
+- unganisha/circe-sconfig
