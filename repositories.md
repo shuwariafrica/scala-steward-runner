@@ -1,2 +1,3 @@
-- unganisha/mchunguzi
 - unganisha/circe-sconfig
+- unganisha/mchunguzi
+- unganisha/sbt-shuwari
