@@ -1,3 +1,3 @@
 # scala-steward-runner
 
-Executes scala-steward for Unganisha project dependency updates.
+Executes scala-steward for Shuwari Africa project dependency updates.
