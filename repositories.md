@@ -1,3 +1,4 @@
 - shuwariafrica/circe-sconfig
 - shuwariafrica/mchunguzi
 - shuwariafrica/sbt-shuwari
+- shuwariafrica/sbt-js
