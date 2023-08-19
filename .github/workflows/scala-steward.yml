@@ -6,7 +6,7 @@ on:
     branches: [ main ]
   # Schedules the workflow to run 3 times daily
   schedule:
-    - cron: '0 0/8 * * *'
+    - cron: '0 2 1/2 * *'
   # Allows the workflow to be run manually from the Actions tab
   workflow_dispatch:
 
@@ -38,7 +38,9 @@ jobs:
       - name: Execute Scala Steward
         uses: scala-steward-org/scala-steward-action@v2
         with:
-          github-token: ${{ secrets.OSS_TEAM_TOKEN }}
+          github-app-id: ${{ secrets.APP_ID }}
+          github-app-installation-id: ${{ secrets.APP_INSTALLATION_ID }}
+          github-app-key: ${{ secrets.APP_PRIVATE_KEY }
           author-email: ${{ steps.import_gpg.outputs.email }}
           author-name: 'Shuwari Africa Team'
           repos-file: 'repositories.md'
