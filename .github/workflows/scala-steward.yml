@@ -39,7 +39,7 @@ jobs:
           git_commit_gpgsign: true
 
       - name: Scala Steward Cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.SCALA_STEWARD_WORKSPACE }}
           key: '${{ runner.os }}-scala-steward-workspace'
