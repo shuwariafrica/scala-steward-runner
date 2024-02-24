@@ -3,3 +3,4 @@
 - shuwariafrica/sbt-js
 - shuwariafrica/sbt-shuwari
 - shuwariafrica/version
+- shuwariafrica/doobie-util
