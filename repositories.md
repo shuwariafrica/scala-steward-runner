@@ -1,6 +1,4 @@
-- shuwariafrica/circe-sconfig
-- shuwariafrica/mchunguzi
+- shuwariafrica/doobie-util
 - shuwariafrica/sbt-js
 - shuwariafrica/sbt-shuwari
 - shuwariafrica/version
-- shuwariafrica/doobie-util
