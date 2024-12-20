@@ -1,5 +1,6 @@
 - shuwariafrica/doobie-util
 - shuwariafrica/laminae
 - shuwariafrica/sbt-js
+- shuwariafrica/sbt-openjfx
 - shuwariafrica/sbt-shuwari
 - shuwariafrica/version
