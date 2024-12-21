@@ -1,3 +1,4 @@
+- shuwariafrica/chromisery
 - shuwariafrica/doobie-util
 - shuwariafrica/laminae
 - shuwariafrica/sbt-js
