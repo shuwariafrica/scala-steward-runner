@@ -1,7 +1,9 @@
 - shuwariafrica/chromisery
 - shuwariafrica/doobie-util
+- shuwariafrica/graphql
 - shuwariafrica/laminae
 - shuwariafrica/sbt-js
+- shuwariafrica/sbt-netbeans
 - shuwariafrica/sbt-openjfx
 - shuwariafrica/sbt-shuwari
 - shuwariafrica/version
