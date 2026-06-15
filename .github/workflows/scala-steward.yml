@@ -1,13 +1,10 @@
 name: Execute Scala Steward
 
 on:
-  # Triggers the workflow on push events but only for the main branch.
   push:
     branches: [ main ]
-  # Schedules the workflow to run 3 times daily
   schedule:
     - cron: '0 6 * * *'
-  # Allows the workflow to be run manually from the Actions tab
   workflow_dispatch:
 
 jobs:
@@ -20,26 +17,25 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
           architecture: x64
-          check-latest: true
 
       - name: Set up GPG
         id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@v6
+        uses: crazy-max/ghaction-import-gpg@v7
         with:
           git_user_signingkey: true
           gpg_private_key: ${{ secrets.OSS_PUBLISH_USER_SIGNING_KEY }}
           git_commit_gpgsign: true
 
       - name: Scala Steward Cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.SCALA_STEWARD_WORKSPACE }}
           key: '${{ runner.os }}-scala-steward-workspace'
