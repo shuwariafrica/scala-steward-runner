@@ -51,4 +51,5 @@ jobs:
           author-name: 'Shuwari Africa Team'
           repos-file: 'repositories.md'
           sign-commits: true
+          signing-key: ${{ secrets.OSS_PUBLISH_USER_SIGNING_KEY_ID }}
           other-args: '--workspace ${{ env.WORKSPACE_DIR }}'
