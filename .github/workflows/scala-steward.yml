@@ -7,6 +7,10 @@ on:
     - cron: '0 6 * * *'
   workflow_dispatch:
 
+env:
+  # A relative path prevents Docker host-to-container absolute path mismatches
+  WORKSPACE_DIR: 'steward-workspace'
+
 jobs:
   scala-steward:
     runs-on: ubuntu-latest
@@ -21,6 +25,15 @@ jobs:
           java-version: 21
           architecture: x64
 
+      - name: Scala Steward Cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/${{ env.WORKSPACE_DIR }}
+          # Dynamic key ensures the updated workspace is saved after every run
+          key: ${{ runner.os }}-scala-steward-${{ github.run_id }}
+          restore-keys: |
+            ${{ runner.os }}-scala-steward-
+
       - name: Set up GPG
         id: import_gpg
         uses: crazy-max/ghaction-import-gpg@v7
@@ -29,7 +42,7 @@ jobs:
           gpg_private_key: ${{ secrets.OSS_PUBLISH_USER_SIGNING_KEY }}
           git_commit_gpgsign: true
           trust_level: 5
-    
+
       - name: Execute Scala Steward
         uses: scala-steward-org/scala-steward-action@v2
         with:
@@ -38,3 +51,4 @@ jobs:
           author-name: 'Shuwari Africa Team'
           repos-file: 'repositories.md'
           sign-commits: true
+          other-args: '--workspace ${{ env.WORKSPACE_DIR }}'
