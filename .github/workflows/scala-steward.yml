@@ -26,7 +26,7 @@ jobs:
           architecture: x64
 
       - name: Scala Steward Cache
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ${{ github.workspace }}/${{ env.WORKSPACE_DIR }}
           # Dynamic key ensures the updated workspace is saved after every run
