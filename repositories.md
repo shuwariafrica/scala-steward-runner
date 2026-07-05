@@ -1,4 +1,5 @@
 - shuwariafrica/ashtray
+- shuwariafrica/emile
 - shuwariafrica/graphql
 - shuwariafrica/laminae
 - shuwariafrica/sbt-js
