@@ -1,6 +1,8 @@
 - shuwariafrica/ashtray
+- shuwariafrica/boilerplate
 - shuwariafrica/emile
 - shuwariafrica/graphql
+- shuwariafrica/kufuli
 - shuwariafrica/laminae
 - shuwariafrica/sbt-js
 - shuwariafrica/sbt-netbeans
