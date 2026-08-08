@@ -119,7 +119,7 @@ jobs:
           trust_level: 5
 
       - name: Execute Scala Steward
-        uses: scala-steward-org/scala-steward-action@41bd88543dcf5e5455689f04d041b095eb901660 # v2.93.0
+        uses: scala-steward-org/scala-steward-action@6162b21b93d4be314a61ce0462fd026630132fee # v2.96.0
         with:
           github-token: ${{ secrets.OSS_TEAM_TOKEN }}
           author-email: ${{ steps.import_gpg.outputs.email }}
