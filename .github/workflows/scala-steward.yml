@@ -1,22 +1,90 @@
 name: Execute Scala Steward
 
+# The managed repository list is computed fresh every run (the discover
+# job's artifact) - repository-exclusions.md and repository-inclusions.md
+# are the only persisted state, nothing else is committed. discover uses
+# the Shuwari Project Steward App token for org-wide read access, since
+# GITHUB_TOKEN is scoped to this repo only; the scala-steward job keeps
+# using OSS_TEAM_TOKEN, since GPG commit signing only works with a PAT,
+# not GitHub App auth.
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
 
-env:
-  # A relative path prevents Docker host-to-container absolute path mismatches
-  WORKSPACE_DIR: 'steward-workspace'
+permissions:
+  contents: read
+
+concurrency:
+  group: scala-steward
+  cancel-in-progress: false
 
 jobs:
-  scala-steward:
+  discover:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v4
+
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: ${{ secrets.SCALA_STEWARD_APP_ID }}
+          private-key: ${{ secrets.SCALA_STEWARD_APP_KEY }}
+          owner: shuwariafrica
+          permission-contents: read
+          permission-metadata: read
+
+      - name: Compute managed repository list
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -uo pipefail
+          # No -e: one repo's contents-API call failing must not abort the
+          # scan of the rest.
+
+          candidates=$(gh api /installation/repositories --paginate \
+            --jq '.repositories[] | select(.archived == false and .fork == false) | .full_name')
+
+          sbt_repos=""
+          for repo in $candidates; do
+            gh api "repos/$repo/contents/build.sbt" --silent 2>/dev/null || continue
+            sbt_repos="$sbt_repos"$'\n'"$repo"
+          done
+
+          list_repos() { sed -n 's/^- //p' "$1" 2>/dev/null; }
+          exclusions=$(list_repos .github/repository-exclusions.md)
+          inclusions=$(list_repos .github/repository-inclusions.md)
+
+          final=$(comm -23 <(sort -u <<< "$sbt_repos") <(sort -u <<< "$exclusions"))
+          final=$(sort -u <<< "$final"$'\n'"$inclusions" | grep -v '^$')
+
+          sed 's/^/- /' <<< "$final" > repos.md
+          {
+            echo "## Managed repositories ($(wc -l < repos.md | tr -d ' ') total)"
+            echo
+            cat repos.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: repos
+          path: repos.md
+          retention-days: 1
+
+  scala-steward:
+    needs: discover
+    runs-on: ubuntu-latest
+    env:
+      # A relative path prevents Docker host-to-container absolute path mismatches
+      WORKSPACE_DIR: 'steward-workspace'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: repos
 
       - name: Set up JDK
         uses: actions/setup-java@v5
@@ -49,7 +117,8 @@ jobs:
           github-token: ${{ secrets.OSS_TEAM_TOKEN }}
           author-email: ${{ steps.import_gpg.outputs.email }}
           author-name: 'Shuwari Africa Team'
-          repos-file: 'repositories.md'
+          repos-file: 'repos.md'
+          repo-config: '.github/.scala-steward.conf'
           sign-commits: true
           signing-key: ${{ secrets.OSS_PUBLISH_USER_SIGNING_KEY_ID }}
           other-args: '--workspace ${{ env.WORKSPACE_DIR }}'

@@ -1,0 +1,8 @@
+.*
+*.md
+
+!.github/
+!.github/**
+!.gitattributes
+!.gitignore
+!README.md
