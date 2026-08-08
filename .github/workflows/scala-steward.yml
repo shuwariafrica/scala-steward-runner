@@ -93,7 +93,7 @@ jobs:
           name: repos
 
       - name: Set up JDK
-        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           # kufuli asserts JDK >= 25 at load time (build.sbt)
