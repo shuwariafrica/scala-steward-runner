@@ -2,11 +2,9 @@ name: Execute Scala Steward
 
 # The managed repository list is computed fresh every run (the discover
 # job's artifact) - repository-exclusions.md and repository-inclusions.md
-# are the only persisted state, nothing else is committed. discover uses
-# the Shuwari Project Steward App token for org-wide read access, since
-# GITHUB_TOKEN is scoped to this repo only; the scala-steward job keeps
-# using OSS_TEAM_TOKEN, since GPG commit signing only works with a PAT,
-# not GitHub App auth.
+# are the only persisted state. scala-steward itself still uses
+# OSS_TEAM_TOKEN, not the App token: GPG commit signing only works with a
+# PAT, not GitHub App auth.
 on:
   push:
     branches: [main]
@@ -55,7 +53,15 @@ jobs:
 
           list_repos() { sed -n 's/^- //p' "$1" 2>/dev/null; }
           exclusions=$(list_repos .github/repository-exclusions.md)
-          inclusions=$(list_repos .github/repository-inclusions.md)
+          raw_inclusions=$(list_repos .github/repository-inclusions.md)
+
+          # Inclusions bypass the .archived filter above; GitHub rejects
+          # writes to an archived repo regardless.
+          inclusions=""
+          for repo in $raw_inclusions; do
+            [ "$(gh api "repos/$repo" --jq '.archived' 2>/dev/null)" = "true" ] && continue
+            inclusions="$inclusions"$'\n'"$repo"
+          done
 
           final=$(comm -23 <(sort -u <<< "$sbt_repos") <(sort -u <<< "$exclusions"))
           final=$(sort -u <<< "$final"$'\n'"$inclusions" | grep -v '^$')
@@ -90,7 +96,10 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          # 21 hits a known Zinc/compiler-bridge classfile-parsing bug
+          # (sbt/sbt#7235) for any managed repo still on an old sbt/Scala
+          # 2.12 combination that needs to compile its bridge from source.
+          java-version: 17
           architecture: x64
 
       - name: Scala Steward Cache
