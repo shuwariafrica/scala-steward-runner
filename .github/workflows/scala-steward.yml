@@ -96,10 +96,8 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          # 21 hits a known Zinc/compiler-bridge classfile-parsing bug
-          # (sbt/sbt#7235) for any managed repo still on an old sbt/Scala
-          # 2.12 combination that needs to compile its bridge from source.
-          java-version: 17
+          # kufuli asserts JDK >= 25 at load time (build.sbt)
+          java-version: 25
           architecture: x64
 
       - name: Scala Steward Cache
