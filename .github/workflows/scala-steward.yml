@@ -84,8 +84,6 @@ jobs:
     needs: discover
     runs-on: ubuntu-latest
     env:
-      # A relative path prevents Docker host-to-container absolute path mismatches
-      WORKSPACE_DIR: 'steward-workspace'
       # Bump both together. The version's minor must stay at 33 or above:
       # scala-steward-action derives the _3 artifact suffix from it.
       STEWARD_REF: 991d10a1267605c5edc8781a948d4aa605b0ebc6
@@ -105,9 +103,9 @@ jobs:
           java-version: 25.0.4+101.0.LTS
           architecture: x64
 
-      - name: Scala Steward build cache
+      - name: Restore the Scala Steward build
         id: steward-build
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.ivy2/local/org.scala-steward
           key: ${{ runner.os }}-scala-steward-build-${{ env.STEWARD_REF }}
@@ -134,15 +132,16 @@ jobs:
           [ -n "${scala3}" ] || { echo "::error::no Scala3 version in build.sbt"; exit 1; }
           sbt "set ThisBuild / version := \"${STEWARD_VERSION}\"" "++${scala3}" core/publishLocal
 
-      - name: Scala Steward Cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # Saved straight after the build, so a later failure does not discard it.
+      - name: Save the Scala Steward build
+        if: steps.steward-build.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          path: ${{ github.workspace }}/${{ env.WORKSPACE_DIR }}
-          # Dynamic key ensures the updated workspace is saved after every run
-          key: ${{ runner.os }}-scala-steward-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-scala-steward-
+          path: ~/.ivy2/local/org.scala-steward
+          key: ${{ runner.os }}-scala-steward-build-${{ env.STEWARD_REF }}
 
+      # The action restores and saves its own workspace, even when a repository fails; that record of
+      # open pull requests is what lets Scala Steward close the ones a newer update supersedes.
       - name: Execute Scala Steward
         uses: scala-steward-org/scala-steward-action@6162b21b93d4be314a61ce0462fd026630132fee # v2.96.0
         env:
@@ -157,4 +156,4 @@ jobs:
           github-app-auth-only: true
           repos-file: 'repos.md'
           repo-config: '.github/.scala-steward.conf'
-          other-args: '--github-api-commits --workspace ${{ env.WORKSPACE_DIR }}'
+          other-args: '--github-api-commits'
