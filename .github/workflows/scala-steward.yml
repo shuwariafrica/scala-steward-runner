@@ -2,9 +2,10 @@ name: Execute Scala Steward
 
 # The managed repository list is computed fresh every run (the discover
 # job's artifact) - repository-exclusions.md and repository-inclusions.md
-# are the only persisted state. scala-steward itself still uses
-# OSS_TEAM_TOKEN, not the App token: GPG commit signing only works with a
-# PAT, not GitHub App auth.
+# are the only persisted state. Scala Steward runs from the
+# shuwariafrica/scala-steward fork, which creates commits through the GitHub
+# API as the Shuwari Project Steward App so GitHub signs them; no user
+# account or signing key is involved.
 on:
   push:
     branches: [main]
@@ -85,6 +86,10 @@ jobs:
     env:
       # A relative path prevents Docker host-to-container absolute path mismatches
       WORKSPACE_DIR: 'steward-workspace'
+      # Bump both together. The version's minor must stay at 33 or above:
+      # scala-steward-action derives the _3 artifact suffix from it.
+      STEWARD_REF: 991d10a1267605c5edc8781a948d4aa605b0ebc6
+      STEWARD_VERSION: 0.99.0-991d10a1
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -100,6 +105,35 @@ jobs:
           java-version: 25.0.4+101.0.LTS
           architecture: x64
 
+      - name: Scala Steward build cache
+        id: steward-build
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.ivy2/local/org.scala-steward
+          key: ${{ runner.os }}-scala-steward-build-${{ env.STEWARD_REF }}
+
+      - name: Check out Scala Steward
+        if: steps.steward-build.outputs.cache-hit != 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: shuwariafrica/scala-steward
+          ref: ${{ env.STEWARD_REF }}
+          path: scala-steward-src
+          persist-credentials: false
+
+      - name: Set up sbt
+        if: steps.steward-build.outputs.cache-hit != 'true'
+        uses: sbt/setup-sbt@ecad189dd245444b9ae0a0cd5922fd938b88906f # v1.5.12
+
+      - name: Build Scala Steward
+        if: steps.steward-build.outputs.cache-hit != 'true'
+        working-directory: scala-steward-src
+        run: |
+          set -euo pipefail
+          scala3=$(sed -n 's/^val Scala3 = "\(.*\)"$/\1/p' build.sbt)
+          [ -n "${scala3}" ] || { echo "::error::no Scala3 version in build.sbt"; exit 1; }
+          sbt "set ThisBuild / version := \"${STEWARD_VERSION}\"" "++${scala3}" core/publishLocal
+
       - name: Scala Steward Cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
@@ -109,23 +143,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-scala-steward-
 
-      - name: Set up GPG
-        id: import_gpg
-        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7
-        with:
-          git_user_signingkey: true
-          gpg_private_key: ${{ secrets.OSS_PUBLISH_USER_SIGNING_KEY }}
-          git_commit_gpgsign: true
-          trust_level: 5
-
       - name: Execute Scala Steward
         uses: scala-steward-org/scala-steward-action@6162b21b93d4be314a61ce0462fd026630132fee # v2.96.0
+        env:
+          # The fork build above is published to ivy2Local only.
+          COURSIER_REPOSITORIES: ivy2Local|central
         with:
-          github-token: ${{ secrets.OSS_TEAM_TOKEN }}
-          author-email: ${{ steps.import_gpg.outputs.email }}
-          author-name: 'Shuwari Africa Team'
+          scala-steward-version: ${{ env.STEWARD_VERSION }}
+          github-app-id: ${{ secrets.SCALA_STEWARD_APP_ID }}
+          github-app-installation-id: ${{ secrets.SCALA_STEWARD_APP_INSTALLATION_ID }}
+          github-app-key: ${{ secrets.SCALA_STEWARD_APP_KEY }}
+          # Keeps repos.md, and with it the exclusions, the repository list.
+          github-app-auth-only: true
           repos-file: 'repos.md'
           repo-config: '.github/.scala-steward.conf'
-          sign-commits: true
-          signing-key: ${{ secrets.OSS_PUBLISH_USER_SIGNING_KEY_ID }}
-          other-args: '--workspace ${{ env.WORKSPACE_DIR }}'
+          other-args: '--github-api-commits --workspace ${{ env.WORKSPACE_DIR }}'
